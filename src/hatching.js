@@ -1,6 +1,7 @@
 /**
- * Hatching/Engraving effect
- * Creates crosshatch patterns like old engravings
+ * Contour Line / Engraving Effect
+ * Creates flowing horizontal lines based on image luminance
+ * Similar to topographic maps and engraved artwork
  */
 
 function applyHatching(canvas, spacing = 3, angle = 45) {
@@ -16,51 +17,81 @@ function applyHatching(canvas, spacing = 3, angle = 45) {
     outputCtx.fillStyle = '#ffffff';
     outputCtx.fillRect(0, 0, width, height);
 
-    // Adjust spacing based on darkness
-    const baseSpacing = Math.max(1, spacing);
+    // Setup line drawing
+    outputCtx.strokeStyle = '#000000';
+    outputCtx.lineWidth = 0.8;
+    outputCtx.lineCap = 'round';
+    outputCtx.lineJoin = 'round';
+
+    const lineSpacing = Math.max(2, spacing);
+
+    // Create grayscale data
+    const grayscale = new Array(width * height);
+    for (let i = 0; i < data.length; i += 4) {
+        const pixelIndex = i / 4;
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        grayscale[pixelIndex] = rgbToGrayscale(r, g, b) / 255;
+    }
+
+    // Draw horizontal lines with vertical distortion based on luminance
+    for (let y = 0; y < height; y += lineSpacing) {
+        outputCtx.beginPath();
+        
+        for (let x = 0; x < width; x++) {
+            // Get luminance at this position
+            const pixelIndex = y * width + x;
+            const luminance = grayscale[pixelIndex];
+            
+            // Distort line vertically based on darkness
+            // Dark areas (low luminance) push line down more
+            const distortion = (1 - luminance) * (lineSpacing * 2);
+            const distortedY = y + distortion;
+
+            if (x === 0) {
+                outputCtx.moveTo(x, distortedY);
+            } else {
+                outputCtx.lineTo(x, distortedY);
+            }
+        }
+        
+        outputCtx.stroke();
+    }
+
+    // Add some cross-hatching for darker areas to increase contrast
+    const crossHatchSpacing = lineSpacing * 2.5;
     const angleRad = (angle * Math.PI) / 180;
 
-    // Process each pixel
-    for (let y = 0; y < height; y += 1) {
-        for (let x = 0; x < width; x += 1) {
-            const index = (y * width + x) * 4;
-            const r = data[index];
-            const g = data[index + 1];
-            const b = data[index + 2];
-            const gray = rgbToGrayscale(r, g, b);
+    outputCtx.lineWidth = 0.6;
+    
+    for (let i = -height; i < width + height; i += crossHatchSpacing) {
+        outputCtx.beginPath();
+        
+        let pathStarted = false;
+        
+        for (let t = 0; t < Math.sqrt(width * width + height * height); t += 1) {
+            const x = Math.round(Math.cos(angleRad) * t + Math.sin(angleRad) * i);
+            const y = Math.round(Math.sin(angleRad) * t - Math.cos(angleRad) * i);
 
-            // Calculate darkness (0 = white, 1 = black)
-            const darkness = 1 - (gray / 255);
-
-            // Determine if we should draw a line at this pixel
-            // based on darkness and angle
-            let shouldDraw = false;
-            let shouldDrawPerpendicular = false;
-
-            // First direction
-            const line1Pos = Math.sin(angleRad) * x + Math.cos(angleRad) * y;
-            const spacing1 = baseSpacing * (1 + darkness);
-            const mod1 = Math.abs(line1Pos % spacing1);
-            if (mod1 < 1 && darkness > 0.15) {
-                shouldDraw = true;
+            if (x >= 0 && x < width && y >= 0 && y < height) {
+                const pixelIndex = y * width + x;
+                const luminance = grayscale[pixelIndex];
+                
+                // Only draw in dark areas
+                if (luminance < 0.5) {
+                    if (!pathStarted) {
+                        outputCtx.moveTo(x, y);
+                        pathStarted = true;
+                    } else {
+                        outputCtx.lineTo(x, y);
+                    }
+                }
             }
-
-            // Perpendicular direction
-            const perpAngle = angleRad + Math.PI / 2;
-            const line2Pos = Math.sin(perpAngle) * x + Math.cos(perpAngle) * y;
-            const spacing2 = baseSpacing * 1.5 * (1 + darkness * 0.5);
-            const mod2 = Math.abs(line2Pos % spacing2);
-            if (mod2 < 1 && darkness > 0.3) {
-                shouldDrawPerpendicular = true;
-            }
-
-            // Determine output color
-            if (shouldDraw || shouldDrawPerpendicular) {
-                outputCtx.fillStyle = '#000000';
-            } else {
-                outputCtx.fillStyle = '#ffffff';
-            }
-            outputCtx.fillRect(x, y, 1, 1);
+        }
+        
+        if (pathStarted) {
+            outputCtx.stroke();
         }
     }
 
