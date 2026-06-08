@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Half Line - Editor de Imágenes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🎨 Half Line - Image Editor</h1>
+            <p>Convierte tus imágenes con efectos halftone, grabado, punteado y mosaicos</p>
+        </header>
+
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p>Arrastra tu imagen aquí o <span class="click-here">haz clic</span></p>
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                </div>
+            </section>
+
+            <div class="editor-wrapper">
+                <!-- Canvas Area -->
+                <section class="canvas-section">
+                    <div class="canvas-container">
+                        <canvas id="canvas"></canvas>
+                        <div class="canvas-placeholder" id="placeholder">
+                            Tu imagen aparecerá aquí
+                        </div>
+                    </div>
+                    <div class="canvas-info">
+                        <span id="imageSize">-</span>
+                    </div>
+                </section>
+
+                <!-- Controls Section -->
+                <aside class="controls-section">
+                    <h2>Herramientas</h2>
+
+                    <!-- Tool Selection -->
+                    <div class="tool-group">
+                        <label>Efecto:</label>
+                        <div class="tool-buttons">
+                            <button class="tool-btn active" data-tool="halftone">
+                                <span class="tool-icon">◐</span>
+                                <span class="tool-name">Halftone</span>
+                            </button>
+                            <button class="tool-btn" data-tool="stipple">
+                                <span class="tool-icon">⋯</span>
+                                <span class="tool-name">Punteado</span>
+                            </button>
+                            <button class="tool-btn" data-tool="hatching">
+                                <span class="tool-icon">///</span>
+                                <span class="tool-name">Grabado</span>
+                            </button>
+                            <button class="tool-btn" data-tool="mosaic">
+                                <span class="tool-icon">⬜</span>
+                                <span class="tool-name">Mosaico</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Halftone Controls -->
+                    <div class="tool-controls" id="halftone-controls">
+                        <div class="control-group">
+                            <label for="halftone-size">Tamaño de puntos: <span id="halftone-size-value">5</span>px</label>
+                            <input type="range" id="halftone-size" min="2" max="20" value="5">
+                        </div>
+                        <div class="control-group">
+                            <label for="halftone-intensity">Intensidad: <span id="halftone-intensity-value">100</span>%</label>
+                            <input type="range" id="halftone-intensity" min="0" max="100" value="100">
+                        </div>
+                    </div>
+
+                    <!-- Stipple Controls -->
+                    <div class="tool-controls" id="stipple-controls" style="display: none;">
+                        <div class="control-group">
+                            <label for="stipple-density">Densidad: <span id="stipple-density-value">50</span>%</label>
+                            <input type="range" id="stipple-density" min="10" max="100" value="50">
+                        </div>
+                        <div class="control-group">
+                            <label for="stipple-size">Tamaño de puntos: <span id="stipple-size-value">2</span>px</label>
+                            <input type="range" id="stipple-size" min="1" max="8" value="2">
+                        </div>
+                    </div>
+
+                    <!-- Hatching Controls -->
+                    <div class="tool-controls" id="hatching-controls" style="display: none;">
+                        <div class="control-group">
+                            <label for="hatching-spacing">Espaciado: <span id="hatching-spacing-value">3</span>px</label>
+                            <input type="range" id="hatching-spacing" min="1" max="15" value="3">
+                        </div>
+                        <div class="control-group">
+                            <label for="hatching-angle">Ángulo: <span id="hatching-angle-value">45</span>°</label>
+                            <input type="range" id="hatching-angle" min="0" max="180" value="45">
+                        </div>
+                    </div>
+
+                    <!-- Mosaic Controls -->
+                    <div class="tool-controls" id="mosaic-controls" style="display: none;">
+                        <div class="control-group">
+                            <label for="mosaic-size">Tamaño de teselas: <span id="mosaic-size-value">10</span>px</label>
+                            <input type="range" id="mosaic-size" min="5" max="50" value="10">
+                        </div>
+                        <div class="control-group">
+                            <label for="mosaic-blur">Suavizado: <span id="mosaic-blur-value">1</span>px</label>
+                            <input type="range" id="mosaic-blur" min="0" max="10" value="1">
+                        </div>
+                    </div>
+
+                    <!-- Common Controls -->
+                    <div class="control-group" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+                        <label for="brightness">Brillo: <span id="brightness-value">100</span>%</label>
+                        <input type="range" id="brightness" min="50" max="150" value="100">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="contrast">Contraste: <span id="contrast-value">100</span>%</label>
+                        <input type="range" id="contrast" min="50" max="150" value="100">
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button id="resetBtn" class="btn btn-secondary">↺ Resetear</button>
+                        <button id="downloadBtn" class="btn btn-primary">⬇ Descargar</button>
+                    </div>
+                </aside>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2024 Half Line Image Editor - Convierte tus imágenes con efectos profesionales</p>
+        </footer>
+    </div>
+
+    <script src="src/utils.js"></script>
+    <script src="src/halftone.js"></script>
+    <script src="src/stipple.js"></script>
+    <script src="src/hatching.js"></script>
+    <script src="src/mosaic.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
