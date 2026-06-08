@@ -16,94 +16,53 @@ function applyHatching(canvas, spacing = 3, angle = 45) {
     outputCtx.fillStyle = '#ffffff';
     outputCtx.fillRect(0, 0, width, height);
 
-    // Convert angle to radians
+    // Adjust spacing based on darkness
+    const baseSpacing = Math.max(1, spacing);
     const angleRad = (angle * Math.PI) / 180;
-    const lineSpacing = Math.max(1, spacing);
 
-    // Create a temporary canvas for the hatching pattern
-    const hatchCanvas = createTempCanvas(width, height);
-    const hatchCtx = hatchCanvas.getContext('2d');
+    // Process each pixel
+    for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+            const index = (y * width + x) * 4;
+            const r = data[index];
+            const g = data[index + 1];
+            const b = data[index + 2];
+            const gray = rgbToGrayscale(r, g, b);
 
-    // Draw first direction hatching
-    hatchCtx.strokeStyle = '#000000';
-    hatchCtx.lineWidth = 0.8;
-    hatchCtx.lineCap = 'butt';
-    hatchCtx.lineJoin = 'bevel';
+            // Calculate darkness (0 = white, 1 = black)
+            const darkness = 1 - (gray / 255);
 
-    for (let i = -height; i < width + height; i += lineSpacing) {
-        hatchCtx.beginPath();
-        const x1 = i - Math.sin(angleRad) * height;
-        const y1 = Math.cos(angleRad) * height;
-        const x2 = i + Math.sin(angleRad) * height;
-        const y2 = -Math.cos(angleRad) * height;
-        
-        hatchCtx.moveTo(x1, y1);
-        hatchCtx.lineTo(x2, y2);
-        hatchCtx.stroke();
-    }
+            // Determine if we should draw a line at this pixel
+            // based on darkness and angle
+            let shouldDraw = false;
+            let shouldDrawPerpendicular = false;
 
-    // Draw second direction hatching (perpendicular)
-    const perpendicularAngle = angleRad + Math.PI / 2;
-    for (let i = -height; i < width + height; i += lineSpacing * 1.5) {
-        hatchCtx.beginPath();
-        const x1 = i - Math.sin(perpendicularAngle) * height;
-        const y1 = Math.cos(perpendicularAngle) * height;
-        const x2 = i + Math.sin(perpendicularAngle) * height;
-        const y2 = -Math.cos(perpendicularAngle) * height;
-        
-        hatchCtx.moveTo(x1, y1);
-        hatchCtx.lineTo(x2, y2);
-        hatchCtx.stroke();
-    }
-
-    // Now apply the hatching pattern based on darkness
-    const hatchImageData = hatchCtx.getImageData(0, 0, width, height);
-    const hatchData = hatchImageData.data;
-    const outputImageData = outputCtx.getImageData(0, 0, width, height);
-    const outputData = outputImageData.data;
-
-    for (let i = 0; i < data.length; i += 4) {
-        const pixelIndex = i / 4;
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const gray = rgbToGrayscale(r, g, b);
-
-        // Calculate darkness (0 = white, 1 = black)
-        const darkness = 1 - (gray / 255);
-
-        // Get the hatching pattern value
-        const hatchR = hatchData[i];
-        const hatchG = hatchData[i + 1];
-        const hatchB = hatchData[i + 2];
-        const hatchGray = rgbToGrayscale(hatchR, hatchG, hatchB);
-
-        // Apply hatching based on darkness
-        // Dark areas = show hatching, light areas = white
-        if (darkness > 0.1) {
-            // Show hatching if there's darkness
-            if (hatchGray < 128) {
-                // Use hatching
-                outputData[i] = 0;     // R
-                outputData[i + 1] = 0; // G
-                outputData[i + 2] = 0; // B
-            } else {
-                // Keep white
-                outputData[i] = 255;
-                outputData[i + 1] = 255;
-                outputData[i + 2] = 255;
+            // First direction
+            const line1Pos = Math.sin(angleRad) * x + Math.cos(angleRad) * y;
+            const spacing1 = baseSpacing * (1 + darkness);
+            const mod1 = Math.abs(line1Pos % spacing1);
+            if (mod1 < 1 && darkness > 0.15) {
+                shouldDraw = true;
             }
-            outputData[i + 3] = 255; // Alpha
-        } else {
-            // Keep white for light areas
-            outputData[i] = 255;
-            outputData[i + 1] = 255;
-            outputData[i + 2] = 255;
-            outputData[i + 3] = 255;
+
+            // Perpendicular direction
+            const perpAngle = angleRad + Math.PI / 2;
+            const line2Pos = Math.sin(perpAngle) * x + Math.cos(perpAngle) * y;
+            const spacing2 = baseSpacing * 1.5 * (1 + darkness * 0.5);
+            const mod2 = Math.abs(line2Pos % spacing2);
+            if (mod2 < 1 && darkness > 0.3) {
+                shouldDrawPerpendicular = true;
+            }
+
+            // Determine output color
+            if (shouldDraw || shouldDrawPerpendicular) {
+                outputCtx.fillStyle = '#000000';
+            } else {
+                outputCtx.fillStyle = '#ffffff';
+            }
+            outputCtx.fillRect(x, y, 1, 1);
         }
     }
-
-    outputCtx.putImageData(outputImageData, 0, 0);
 
     // Copy output back to canvas
     ctx.drawImage(output, 0, 0);
