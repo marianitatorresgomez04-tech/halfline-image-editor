@@ -1,0 +1,27 @@
+{
+  "name": "halfline-image-editor",
+  "version": "1.0.0",
+  "description": "A web application to convert images with halfline effects (halftone, stipple, hatching, mosaic)",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "npx http-server"
+  },
+  "keywords": [
+    "image",
+    "editor",
+    "halftone",
+    "stipple",
+    "hatching",
+    "mosaic",
+    "effects",
+    "canvas",
+    "web"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marianitatorresgomez04-tech/halfline-image-editor.git"
+  }
+}
